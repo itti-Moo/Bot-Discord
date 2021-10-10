@@ -1,16 +1,11 @@
 const {Client,Intents} = require('discord.js');
 const DB = require('./db')
 const dotenv = require('dotenv');
-const { Db } = require('mongodb');
 const moment = require('moment')
 const _ = require('lodash');
 dotenv.config();
 
-// var app = require('express')();
 
-// var listener = app.listen(8888, function(){
-//     console.log('Listening on port ' + listener.address().port); //Listening on port 8888
-// });
 
 
 const client = new Client (
@@ -27,6 +22,7 @@ client.on('ready',()=>{
 })
 client.on('messageCreate', async msg=>{
 
+    
     const formatDateTime = "YYYY-MM-DD HH:mm:ss"
     const formatDate = "YYYY-MM-DD"
 
@@ -37,6 +33,9 @@ client.on('messageCreate', async msg=>{
     var conditionFindData = { name: msg.author.username,currentDate:currentDate }
     let findData = await DB.findData(process.env.CHECKIN_COLLECTION,conditionFindData);
     let msgContent = msg.content.toLowerCase();
+    let matchMsgIncome= msgContent.match(/!รายรับ/g);
+    let matchMsgExpense= msgContent.match(/!รายจ่าย/g);
+    console.log(matchMsgIncome);
     
     if(msgContent==='!checkin' && findData.length===0)
     {
@@ -76,6 +75,22 @@ client.on('messageCreate', async msg=>{
         _.forEach(findData,function(data){
             msg.channel.send("Type Command : " + data.Type + "\r\n" + "Kubectl Command : " + data.Command + "\r\n" + "Kubectl Message : " + data.Message);
         })
+    }
+    else if(matchMsgIncome !== null)
+    {   
+        //HouseHold_Expense
+        var splitResult = msgContent.split(' ')
+        var insertData = { name: msg.author.username,Type:"Income" ,item:splitResult[1],price:splitResult[2],currentDate:currentDate}
+        // await DB.insertData(process.env.CHECKIN_COLLECTION,insertData);
+        msg.channel.send("เพิ่มรายการรายรับของ : "+ msg.author.username + "\r\n" + 'รายการ  :  ' + splitResult[1] + "\r\n" + 'มูลค่า : ' + splitResult[2]);
+    }
+    else if(matchMsgExpense!== null)
+    {
+        var splitResult = msgContent.split(' ')
+        var insertData = { name: msg.author.username,Type:"Expense" ,item:splitResult[1],price:splitResult[2],currentDate:currentDate}
+        // await DB.insertData(process.env.CHECKIN_COLLECTION,insertData);
+        msg.channel.send("เพิ่มรายการรายจ่ายของ : "+ msg.author.username + "\r\n" + 'รายการ  :  ' + splitResult[1] + "\r\n" + 'มูลค่า : ' + splitResult[2]);
+
     }
     
 })
